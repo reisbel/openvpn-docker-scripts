@@ -4,22 +4,16 @@
 
 ## Steps
 
-Clone repository
+Install OpenVPN and dependencies
 
 ```bash
-git clone https://github.com/reisbel/openvpn-docker-scripts.git && cd openvpn-docker-scripts
-```
-
-OpenVPN install and dependencies
-
-```bash
-./install_openvpn.sh
+sudo bash -c "$(wget -qO- https://raw.githubusercontent.com/reisbel/openvpn-docker-scripts/master/install_openvpn.sh)"
 ```
 
 ## Create user
 
 ```bash
-./create_user.sh user1
+sudo bash  -c "$(wget -qO- https://raw.githubusercontent.com/reisbel/openvpn-docker-scripts/master/create_user.sh)" --dump-strings user1
 ```
 
 ## References
