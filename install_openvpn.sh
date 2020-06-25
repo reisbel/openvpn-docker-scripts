@@ -229,6 +229,13 @@ function start_openvpn() {
   log_error "FAILED"
 }
 
+function start_openvpn_monitor() {
+  # By itself, local messes up the return code.
+  local readonly STDERR_OUTPUT
+
+  STDERR_OUTPUT=$(docker run --name openvpn-monitor -e OPENVPNMONITOR_SITES_0_ALIAS=UDP -e OPENVPNMONITOR_SITES_0_HOST=openvpn -e OPENVPNMONITOR_SITES_0_NAME=UDP -e OPENVPNMONITOR_SITES_0_PORT=${MANAGEMENT_PORT} -e OPENVPNMONITOR_SITES_0_SHOWDISCONNECT=True -e OPENVPNMONITOR_SITES_1_ALIAS=TCP -e OPENVPNMONITOR_SITES_1_HOST=openvpn -e OPENVPNMONITOR_SITES_1_NAME=TCP -e OPENVPNMONITOR_SITES_1_PORT=${MANAGEMENT_PORT} -p 80:80 ruimarinho/openvpn-monitor 2>&1 >/dev/null)
+}
+
 function start_watchtower() {
   # Start watchtower to automatically fetch docker image updates.
   # Set watchtower to refresh every 30 seconds if a custom SB_IMAGE is used (for
@@ -394,6 +401,7 @@ function main() {
   declare -i FLAGS_MANAGEMENT_PORT=5555
   parse_flags "$@"
   install_openvpn
+  start_openvpn_monitor
 }
 
 main "$@"
