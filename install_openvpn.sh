@@ -364,6 +364,7 @@ function parse_flags() {
         ;;
       --management-port)
         FLAGS_MANAGEMENT_PORT=$1
+        shift
         if ! is_valid_port $FLAGS_MANAGEMENT_PORT; then
           log_error "Invalid value for $flag: $FLAGS_MANAGEMENT_PORT"
           exit 1
