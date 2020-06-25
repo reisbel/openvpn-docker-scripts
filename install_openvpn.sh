@@ -286,7 +286,7 @@ install_openvpn() {
   # TODO(fortuna): Make sure this is IPv4
   PUBLIC_HOSTNAME=${FLAGS_HOSTNAME:-${SB_PUBLIC_IP:-$(curl -4s https://ipinfo.io/ip)}}
 
-  while[[$MANAGEMENT_PORT == 0 || $MANAGEMENT_PORT == $API_PORT]]; do
+  while [[$MANAGEMENT_PORT == 0 || $MANAGEMENT_PORT == $API_PORT]]; do
     MANAGEMENT_PORT=${SB_MANAGEMENT_PORT:-$(get_random_port)}
   done
   
