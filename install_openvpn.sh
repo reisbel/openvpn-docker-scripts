@@ -277,7 +277,7 @@ install_openvpn() {
   log_for_sentry "Setting MANAGEMENT por"
   MANAGEMENT_PORT="${FLAGS_MANAGEMENT_PORT}"
 
-  if[[$MANAGEMENT_PORT == $API_PORT ]]; then
+  if [[$MANAGEMENT_PORT == $API_PORT ]]; then
     log_error "Api MANAGEMENT port don't igual to api port"
     exit 1
   fi
