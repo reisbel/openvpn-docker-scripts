@@ -277,7 +277,7 @@ install_openvpn() {
   log_for_sentry "Setting MANAGEMENT por"
   MANAGEMENT_PORT="${FLAGS_MANAGEMENT_PORT}"
 
-  if [[$MANAGEMENT_PORT == $API_PORT ]]; then
+  if [[ $MANAGEMENT_PORT == $API_PORT ]]; then
     log_error "Api MANAGEMENT port don't igual to api port"
     exit 1
   fi
@@ -286,7 +286,7 @@ install_openvpn() {
   # TODO(fortuna): Make sure this is IPv4
   PUBLIC_HOSTNAME=${FLAGS_HOSTNAME:-${SB_PUBLIC_IP:-$(curl -4s https://ipinfo.io/ip)}}
 
-  while [[$MANAGEMENT_PORT == 0 || $MANAGEMENT_PORT == $API_PORT]]; do
+  while [[ $MANAGEMENT_PORT == 0 || $MANAGEMENT_PORT == $API_PORT ]]; do
     MANAGEMENT_PORT=${SB_MANAGEMENT_PORT:-$(get_random_port)}
   done
   
@@ -368,6 +368,7 @@ function parse_flags() {
           log_error "Invalid value for $flag: $FLAGS_MANAGEMENT_PORT"
           exit 1
         fi
+        ;;
       --)
         break
         ;;
