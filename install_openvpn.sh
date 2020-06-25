@@ -334,7 +334,7 @@ function is_valid_port() {
 }
 
 function parse_flags() {
-  params=$(getopt --longoptions hostname:,api-port:,keys-port: -n $0 -- $0 "$@")
+  params=$(getopt --longoptions hostname:,api-port:,keys-port:,management-port: -n $0 -- $0 "$@")
   [[ $? == 0 ]] || exit 1
   eval set -- $params
 
