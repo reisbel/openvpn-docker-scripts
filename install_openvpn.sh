@@ -277,11 +277,6 @@ install_openvpn() {
   log_for_sentry "Setting MANAGEMENT por"
   MANAGEMENT_PORT="${FLAGS_MANAGEMENT_PORT}"
 
-  if [[ $MANAGEMENT_PORT == $API_PORT ]]; then
-    log_error "Api MANAGEMENT port don't igual to api port"
-    exit 1
-  fi
-
   log_for_sentry "Setting PUBLIC_HOSTNAME"
   # TODO(fortuna): Make sure this is IPv4
   PUBLIC_HOSTNAME=${FLAGS_HOSTNAME:-${SB_PUBLIC_IP:-$(curl -4s https://ipinfo.io/ip)}}
@@ -384,6 +379,10 @@ function parse_flags() {
     log_error "--api-port must be different from --keys-port"
     exit 1
   fi
+  if [[ $FLAGS_API_PORT != 0 && $FLAGS_MANAGEMENT_PORT == $FLAGS_API_PORT ]]; then
+    log_error "--api-port must be different from --management-port"
+    exit 1
+  fi
   return 0
 }
 
@@ -392,6 +391,7 @@ function main() {
   declare FLAGS_HOSTNAME=""
   declare -i FLAGS_API_PORT=1194
   declare -i FLAGS_KEYS_PORT=0
+  declare -i FLAGS_MANAGEMENT_PORT=5555
   parse_flags "$@"
   install_openvpn
 }
