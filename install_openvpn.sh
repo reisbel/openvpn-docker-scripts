@@ -233,7 +233,7 @@ function start_openvpn_monitor() {
   # By itself, local messes up the return code.
   local readonly STDERR_OUTPUT
 
-  STDERR_OUTPUT=$(docker run --name openvpn-monitor --network-alias openvpn-monitor -e OPENVPNMONITOR_SITES_0_ALIAS=UDP -e OPENVPNMONITOR_SITES_0_HOST=openvpn -e OPENVPNMONITOR_SITES_0_NAME=UDP -e OPENVPNMONITOR_SITES_0_PORT=${MANAGEMENT_PORT} -e OPENVPNMONITOR_SITES_0_SHOWDISCONNECT=True -e OPENVPNMONITOR_SITES_1_ALIAS=TCP -e OPENVPNMONITOR_SITES_1_HOST=openvpn -e OPENVPNMONITOR_SITES_1_NAME=TCP -e OPENVPNMONITOR_SITES_1_PORT=${MANAGEMENT_PORT} -p 80:80 ruimarinho/openvpn-monitor 2>&1 >/dev/null)
+  STDERR_OUTPUT=$(docker run -d --name openvpn-monitor --network-alias openvpn-monitor -e OPENVPNMONITOR_SITES_0_ALIAS=UDP -e OPENVPNMONITOR_SITES_0_HOST=openvpn -e OPENVPNMONITOR_SITES_0_NAME=UDP -e OPENVPNMONITOR_SITES_0_PORT=${MANAGEMENT_PORT} -e OPENVPNMONITOR_SITES_0_SHOWDISCONNECT=True -e OPENVPNMONITOR_SITES_1_ALIAS=TCP -e OPENVPNMONITOR_SITES_1_HOST=openvpn -e OPENVPNMONITOR_SITES_1_NAME=TCP -e OPENVPNMONITOR_SITES_1_PORT=${MANAGEMENT_PORT} -p 80:80 ruimarinho/openvpn-monitor 2>&1 >/dev/null)
   local readonly RET=$?
   if [[ $RET -eq 0 ]]; then
     return 0
