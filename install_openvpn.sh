@@ -19,12 +19,13 @@ set -euo pipefail
 
 function display_usage() {
   cat <<EOF
-Usage: install_server.sh [--hostname <hostname>] [--api-port <port>] [--keys-port <port>] [--management-port <port>]
+Usage: install_server.sh [--hostname <hostname>] [--api-port <port>] [--keys-port <port>] [--management-port <port>] [--monitor-enable <true or false>]
 
-  --hostname   The hostname to be used to access the management API and access keys
-  --api-port   The port number for the management API
-  --keys-port  The port number for the access keys
-  --management-port The port number for the monitor app
+  --hostname   The hostname to be used to access the management API and access keys.
+  --api-port   The port number for the management API. (By default is 1194)
+  --keys-port  The port number for the access keys.
+  --management-port The port number for the managent. (By default is 5555)
+  --monitor-enable Define if monitor app should be deployed or not. (By default is false).
 EOF
 }
 
@@ -355,8 +356,12 @@ function is_valid_port() {
   (( 0 < "$1" && "$1" <= 65535 ))
 }
 
+function is_valid_bool() {
+  (( $1 || !$1 ))
+}
+
 function parse_flags() {
-  params=$(getopt --longoptions hostname:,api-port:,keys-port:,management-port: -n $0 -- $0 "$@")
+  params=$(getopt --longoptions hostname:,api-port:,keys-port:,monitor-enable:,management-port: -n $0 -- $0 "$@")
   [[ $? == 0 ]] || exit 1
   eval set -- $params
 
@@ -392,6 +397,14 @@ function parse_flags() {
           exit 1
         fi
         ;;
+      --monitor-enable)
+        FLAGS_MONITOR_ENABLE=$1
+        shift
+        if ! is_valid_bool $FLAGS_MONITOR_ENABLE; then
+          log_error "Invalid value for $flag: $FLAGS_MONITOR_ENABLE"
+          exit 1
+        fi
+        ;;
       --)
         break
         ;;
@@ -419,10 +432,13 @@ function main() {
   declare -i FLAGS_API_PORT=1194
   declare -i FLAGS_KEYS_PORT=0
   declare -i FLAGS_MANAGEMENT_PORT=5555
+  declare -i FLAGS_MONITOR_ENABLE=false
   parse_flags "$@"
   install_openvpn
-  #run_step "Starting OpenVPN Monitor" start_openvpn_monitor
-  run_step "Starting OpenVPN Monitor" start_openvpn_monitor
+  if [[ FLAGS_MONITOR_ENABLE ]]; then
+    #run_step "Starting OpenVPN Monitor" start_openvpn_monitor
+    run_step "Starting OpenVPN Monitor" start_openvpn_monitor
+  fi
 }
 
 main "$@"
