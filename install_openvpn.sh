@@ -435,7 +435,7 @@ function main() {
   declare FLAGS_MONITOR_ENABLE=false
   parse_flags "$@"
   install_openvpn
-  if [[ FLAGS_MONITOR_ENABLE ]]; then
+  if [[ $FLAGS_MONITOR_ENABLE ]]; then
     #run_step "Starting OpenVPN Monitor" start_openvpn_monitor
     run_step "Starting OpenVPN Monitor" start_openvpn_monitor
   fi
