@@ -202,14 +202,14 @@ function join() {
 }
 
 function init_pki() {
-  sudo docker run -v ${OPEN_VPN_DATA_DIR}:/etc/openvpn --rm -it ${SB_IMAGE} ovpn_initpki
+  sudo docker run --network vpn -v ${OPEN_VPN_DATA_DIR}:/etc/openvpn --rm -it ${SB_IMAGE} ovpn_initpki
 }
 
 function generate_openvpn_config_file() {
   # By itself, local messes up the return code.
   local readonly STDERR_OUTPUT
   
-  STDERR_OUTPUT=$(docker run -v ${OPEN_VPN_DATA_DIR}:/etc/openvpn --rm ${SB_IMAGE} ovpn_genconfig -u udp://${PUBLIC_HOSTNAME}:${API_PORT} -e "management 0.0.0.0 ${MANAGEMENT_PORT}" 2>&1 >/dev/null)
+  STDERR_OUTPUT=$(docker run --network vpn -v ${OPEN_VPN_DATA_DIR}:/etc/openvpn --rm ${SB_IMAGE} ovpn_genconfig -u udp://${PUBLIC_HOSTNAME}:${API_PORT} -e "management 0.0.0.0 ${MANAGEMENT_PORT}" 2>&1 >/dev/null)
   local readonly RET=$?
   if [[ $RET -eq 0 ]]; then
     return 0
@@ -221,7 +221,7 @@ function start_openvpn() {
   # By itself, local messes up the return code.
   local readonly STDERR_OUTPUT
 
-  STDERR_OUTPUT=$(docker run --name openvpn --network-alias openvpn -v ${OPEN_VPN_DATA_DIR}:/etc/openvpn -d -p ${API_PORT}:${API_PORT}/udp -p ${MANAGEMENT_PORT}:${MANAGEMENT_PORT} --cap-add=NET_ADMIN ${SB_IMAGE} 2>&1 >/dev/null)
+  STDERR_OUTPUT=$(docker run --name openvpn --network vpn --network-alias openvpn -v ${OPEN_VPN_DATA_DIR}:/etc/openvpn -d -p ${API_PORT}:${API_PORT}/udp -p ${MANAGEMENT_PORT}:${MANAGEMENT_PORT} --cap-add=NET_ADMIN ${SB_IMAGE} 2>&1 >/dev/null)
   local readonly RET=$?
   if [[ $RET -eq 0 ]]; then
     return 0
@@ -233,7 +233,19 @@ function start_openvpn_monitor() {
   # By itself, local messes up the return code.
   local readonly STDERR_OUTPUT
 
-  STDERR_OUTPUT=$(docker run -d --name openvpn-monitor --network-alias openvpn-monitor -e OPENVPNMONITOR_SITES_0_ALIAS=UDP -e OPENVPNMONITOR_SITES_0_HOST=openvpn -e OPENVPNMONITOR_SITES_0_NAME=UDP -e OPENVPNMONITOR_SITES_0_PORT=${MANAGEMENT_PORT} -e OPENVPNMONITOR_SITES_0_SHOWDISCONNECT=True -e OPENVPNMONITOR_SITES_1_ALIAS=TCP -e OPENVPNMONITOR_SITES_1_HOST=openvpn -e OPENVPNMONITOR_SITES_1_NAME=TCP -e OPENVPNMONITOR_SITES_1_PORT=${MANAGEMENT_PORT} -p 80:80 ruimarinho/openvpn-monitor 2>&1 >/dev/null)
+  STDERR_OUTPUT=$(docker run -d --name openvpn-monitor --network vpn --network-alias openvpn-monitor -e OPENVPNMONITOR_SITES_0_ALIAS=UDP -e OPENVPNMONITOR_SITES_0_HOST=openvpn -e OPENVPNMONITOR_SITES_0_NAME=UDP -e OPENVPNMONITOR_SITES_0_PORT=${MANAGEMENT_PORT} -e OPENVPNMONITOR_SITES_0_SHOWDISCONNECT=True -e OPENVPNMONITOR_SITES_1_ALIAS=TCP -e OPENVPNMONITOR_SITES_1_HOST=openvpn -e OPENVPNMONITOR_SITES_1_NAME=TCP -e OPENVPNMONITOR_SITES_1_PORT=${MANAGEMENT_PORT} -p 80:80 ruimarinho/openvpn-monitor 2>&1 >/dev/null)
+  local readonly RET=$?
+  if [[ $RET -eq 0 ]]; then
+    return 0
+  fi
+  log_error "FAILED"
+}
+
+function create_network() {
+  # By itself, local messes up the return code.
+  local readonly STDERR_OUTPUT
+
+  STDERR_OUTPUT=$(docker network create vpn 2>&1 >/dev/null)
   local readonly RET=$?
   if [[ $RET -eq 0 ]]; then
     return 0
@@ -250,7 +262,7 @@ function start_watchtower() {
   docker_watchtower_flags+=(-v /var/run/docker.sock:/var/run/docker.sock)
   # By itself, local messes up the return code.
   local readonly STDERR_OUTPUT
-  STDERR_OUTPUT=$(docker run -d "${docker_watchtower_flags[@]}" v2tec/watchtower --cleanup --tlsverify --interval $WATCHTOWER_REFRESH_SECONDS 2>&1 >/dev/null)
+  STDERR_OUTPUT=$(docker run -d --network vpn "${docker_watchtower_flags[@]}" v2tec/watchtower --cleanup --tlsverify --interval $WATCHTOWER_REFRESH_SECONDS 2>&1 >/dev/null)
   local readonly RET=$?
   if [[ $RET -eq 0 ]]; then
     return 0
@@ -305,6 +317,9 @@ install_openvpn() {
     log_for_sentry "$MSG"
     exit 1
   fi
+
+  #create network
+  run_step "Generate network to vpn service" create_network
 
   #Generate OpenVPN config file
   run_step "Generate OpenVPN config file" generate_openvpn_config_file
