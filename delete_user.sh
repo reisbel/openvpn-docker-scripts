@@ -13,7 +13,7 @@ else
 
 # Remove non-ASCII characters of the paramenter 1, the username
 	export LC_ALL=C 
-	username=$(echo "$1" | tr -cd '[:alnum:]')
+	username = $1 #$(echo "$1" | tr -cd '[:alnum:]')
 	
 	# easy-rsa directory
 	EasyRsaDir="/etc/openvpn/easy-rsa"
