@@ -19,11 +19,13 @@ set -euo pipefail
 
 function display_usage() {
   cat <<EOF
-Usage: install_server.sh [--hostname <hostname>] [--api-port <port>] [--keys-port <port>]
+Usage: install_server.sh [--hostname <hostname>] [--api-port <port>] [--keys-port <port>] [--management-port <port>] [--monitor-enable <true or false>]
 
-  --hostname   The hostname to be used to access the management API and access keys
-  --api-port   The port number for the management API
-  --keys-port  The port number for the access keys
+  --hostname   The hostname to be used to access the management API and access keys.
+  --api-port   The port number for the management API. (By default is 1194)
+  --keys-port  The port number for the access keys.
+  --management-port The port number for the managent. (By default is 5555)
+  --monitor-enable Define if monitor app should be deployed or not. (By default is false).
 EOF
 }
 
@@ -201,14 +203,14 @@ function join() {
 }
 
 function init_pki() {
-  sudo docker run -v ${OPEN_VPN_DATA_DIR}:/etc/openvpn --rm -it ${SB_IMAGE} ovpn_initpki
+  sudo docker run --network vpn -v ${OPEN_VPN_DATA_DIR}:/etc/openvpn --rm -it ${SB_IMAGE} ovpn_initpki
 }
 
 function generate_openvpn_config_file() {
   # By itself, local messes up the return code.
   local readonly STDERR_OUTPUT
   
-  STDERR_OUTPUT=$(docker run -v ${OPEN_VPN_DATA_DIR}:/etc/openvpn --rm ${SB_IMAGE} ovpn_genconfig -u udp://${PUBLIC_HOSTNAME}:${API_PORT} 2>&1 >/dev/null)
+  STDERR_OUTPUT=$(docker run --network vpn -v ${OPEN_VPN_DATA_DIR}:/etc/openvpn --rm ${SB_IMAGE} ovpn_genconfig -u udp://${PUBLIC_HOSTNAME}:${API_PORT} -e "management 0.0.0.0 ${MANAGEMENT_PORT}" 2>&1 >/dev/null)
   local readonly RET=$?
   if [[ $RET -eq 0 ]]; then
     return 0
@@ -220,7 +222,31 @@ function start_openvpn() {
   # By itself, local messes up the return code.
   local readonly STDERR_OUTPUT
 
-  STDERR_OUTPUT=$(docker run --name openvpn -v ${OPEN_VPN_DATA_DIR}:/etc/openvpn -d -p ${API_PORT}:${API_PORT}/udp --cap-add=NET_ADMIN ${SB_IMAGE} 2>&1 >/dev/null)
+  STDERR_OUTPUT=$(docker run --name openvpn --network vpn --network-alias openvpn -v ${OPEN_VPN_DATA_DIR}:/etc/openvpn -d -p ${API_PORT}:${API_PORT}/udp -p ${MANAGEMENT_PORT}:${MANAGEMENT_PORT} --cap-add=NET_ADMIN ${SB_IMAGE} 2>&1 >/dev/null)
+  local readonly RET=$?
+  if [[ $RET -eq 0 ]]; then
+    return 0
+  fi
+  log_error "FAILED"
+}
+
+function start_openvpn_monitor() {
+  # By itself, local messes up the return code.
+  local readonly STDERR_OUTPUT
+
+  STDERR_OUTPUT=$(docker run -d --name openvpn-monitor --network vpn --network-alias openvpn-monitor -e OPENVPNMONITOR_SITES_0_ALIAS=UDP -e OPENVPNMONITOR_SITES_0_HOST=openvpn -e OPENVPNMONITOR_SITES_0_NAME=UDP -e OPENVPNMONITOR_SITES_0_PORT=${MANAGEMENT_PORT} -e OPENVPNMONITOR_SITES_0_SHOWDISCONNECT=True -e OPENVPNMONITOR_SITES_1_ALIAS=TCP -e OPENVPNMONITOR_SITES_1_HOST=openvpn -e OPENVPNMONITOR_SITES_1_NAME=TCP -e OPENVPNMONITOR_SITES_1_PORT=${MANAGEMENT_PORT} -p 80:80 ruimarinho/openvpn-monitor 2>&1 >/dev/null)
+  local readonly RET=$?
+  if [[ $RET -eq 0 ]]; then
+    return 0
+  fi
+  log_error "FAILED"
+}
+
+function create_network() {
+  # By itself, local messes up the return code.
+  local readonly STDERR_OUTPUT
+
+  STDERR_OUTPUT=$(docker network create vpn 2>&1 >/dev/null)
   local readonly RET=$?
   if [[ $RET -eq 0 ]]; then
     return 0
@@ -237,7 +263,7 @@ function start_watchtower() {
   docker_watchtower_flags+=(-v /var/run/docker.sock:/var/run/docker.sock)
   # By itself, local messes up the return code.
   local readonly STDERR_OUTPUT
-  STDERR_OUTPUT=$(docker run -d "${docker_watchtower_flags[@]}" v2tec/watchtower --cleanup --tlsverify --interval $WATCHTOWER_REFRESH_SECONDS 2>&1 >/dev/null)
+  STDERR_OUTPUT=$(docker run -d --network vpn "${docker_watchtower_flags[@]}" v2tec/watchtower --cleanup --tlsverify --interval $WATCHTOWER_REFRESH_SECONDS 2>&1 >/dev/null)
   local readonly RET=$?
   if [[ $RET -eq 0 ]]; then
     return 0
@@ -269,16 +295,22 @@ install_openvpn() {
   log_for_sentry "Setting API port"
   API_PORT="${FLAGS_API_PORT}"
 
+  if [[ $API_PORT == 0 ]]; then
+    API_PORT=${SB_API_PORT:-$(get_random_port)}
+  fi
+
+  log_for_sentry "Setting MANAGEMENT por"
+  MANAGEMENT_PORT="${FLAGS_MANAGEMENT_PORT}"
+
   log_for_sentry "Setting PUBLIC_HOSTNAME"
   # TODO(fortuna): Make sure this is IPv4
   PUBLIC_HOSTNAME=${FLAGS_HOSTNAME:-${SB_PUBLIC_IP:-$(curl -4s https://ipinfo.io/ip)}}
 
-  if [[ $API_PORT == 0 ]]; then
-    API_PORT=${SB_API_PORT:-$(get_random_port)}
-  fi
+  while [[ $MANAGEMENT_PORT == 0 || $MANAGEMENT_PORT == $API_PORT ]]; do
+    MANAGEMENT_PORT=${SB_MANAGEMENT_PORT:-$(get_random_port)}
+  done
   
   readonly SB_IMAGE=${SB_IMAGE:-kylemanna/openvpn}
-
   
   if [[ -z $PUBLIC_HOSTNAME ]]; then
     local readonly MSG="Failed to determine the server's IP address."
@@ -286,6 +318,9 @@ install_openvpn() {
     log_for_sentry "$MSG"
     exit 1
   fi
+
+  #create network
+  run_step "Generate network to vpn service" create_network
 
   #Generate OpenVPN config file
   run_step "Generate OpenVPN config file" generate_openvpn_config_file
@@ -321,8 +356,12 @@ function is_valid_port() {
   (( 0 < "$1" && "$1" <= 65535 ))
 }
 
+function is_valid_bool() {
+  (($1 == "true" || $1 == "false"))
+}
+
 function parse_flags() {
-  params=$(getopt --longoptions hostname:,api-port:,keys-port: -n $0 -- $0 "$@")
+  params=$(getopt --longoptions hostname:,api-port:,keys-port:,monitor-enable:,management-port: -n $0 -- $0 "$@")
   [[ $? == 0 ]] || exit 1
   eval set -- $params
 
@@ -350,6 +389,22 @@ function parse_flags() {
           exit 1
         fi
         ;;
+      --management-port)
+        FLAGS_MANAGEMENT_PORT=$1
+        shift
+        if ! is_valid_port $FLAGS_MANAGEMENT_PORT; then
+          log_error "Invalid value for $flag: $FLAGS_MANAGEMENT_PORT"
+          exit 1
+        fi
+        ;;
+      --monitor-enable)
+        FLAGS_MONITOR_ENABLE=$1
+        shift
+        if ! is_valid_bool $FLAGS_MONITOR_ENABLE; then
+          log_error "Invalid value for $flag: $FLAGS_MONITOR_ENABLE"
+          exit 1
+        fi
+        ;;
       --)
         break
         ;;
@@ -364,6 +419,10 @@ function parse_flags() {
     log_error "--api-port must be different from --keys-port"
     exit 1
   fi
+  if [[ $FLAGS_API_PORT != 0 && $FLAGS_MANAGEMENT_PORT == $FLAGS_API_PORT ]]; then
+    log_error "--api-port must be different from --management-port"
+    exit 1
+  fi
   return 0
 }
 
@@ -372,8 +431,14 @@ function main() {
   declare FLAGS_HOSTNAME=""
   declare -i FLAGS_API_PORT=1194
   declare -i FLAGS_KEYS_PORT=0
+  declare -i FLAGS_MANAGEMENT_PORT=5555
+  declare FLAGS_MONITOR_ENABLE=false
   parse_flags "$@"
   install_openvpn
+  if $FLAGS_MONITOR_ENABLE; then
+    #run_step "Starting OpenVPN Monitor" start_openvpn_monitor
+    run_step "Starting OpenVPN Monitor" start_openvpn_monitor
+  fi
 }
 
 main "$@"
