@@ -20,6 +20,10 @@ sudo bash -c "$(wget -qO- https://raw.githubusercontent.com/reisbel/openvpn-dock
 ```bash
 sudo bash  -c "$(wget -qO- https://raw.githubusercontent.com/reisbel/openvpn-docker-scripts/master/create_user.sh)" --dump-strings user1
 ```
+## Delete user
+```bash
+sudo bash -c "$(wget -qO- https://raw.githubusercontent.com/dainer88/openvpn-docker-scripts/master/delete_user.sh)" user1
+```
 
 ## References
 
@@ -28,6 +32,9 @@ Outline install script
 
 Set Up a VPN Server With Docker In 5 Minutes
 <https://medium.com/@gurayy/set-up-a-vpn-server-with-docker-in-5-minutes-a66184882c45>
+
+Script to delete user
+<https://aurlen.net/w/es/script-para-eliminar-un-usuario-openvpn/>
 
 ## License
 
