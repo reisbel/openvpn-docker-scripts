@@ -291,7 +291,7 @@ install_openvpn() {
   run_step "Generate OpenVPN config file" generate_openvpn_config_file
   
   #init PKI
-  # run_step "Init OpenVPN PKI" init_pki
+  run_step "Init OpenVPN PKI" init_pki
   
   #run_step "Starting OpenVPN" start_openvpn
   run_step "Starting OpenVPN" start_openvpn
