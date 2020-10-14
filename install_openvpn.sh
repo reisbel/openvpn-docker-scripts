@@ -277,7 +277,7 @@ install_openvpn() {
     API_PORT=${SB_API_PORT:-$(get_random_port)}
   fi
   
-  readonly SB_IMAGE=${SB_IMAGE:-kylemanna/openvpn}
+  readonly SB_IMAGE=${SB_IMAGE:-kylemanna/openvpn:2.3}
 
   
   if [[ -z $PUBLIC_HOSTNAME ]]; then
