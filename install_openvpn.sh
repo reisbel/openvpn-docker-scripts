@@ -208,7 +208,7 @@ function generate_openvpn_config_file() {
   # By itself, local messes up the return code.
   local readonly STDERR_OUTPUT
   
-  STDERR_OUTPUT=$(docker run -v ${OPEN_VPN_DATA_DIR}:/etc/openvpn --rm ${SB_IMAGE} ovpn_genconfig -u udp://${PUBLIC_HOSTNAME}:${API_PORT} 2>&1 >/dev/null)
+  STDERR_OUTPUT=$(docker run -v ${OPEN_VPN_DATA_DIR}:/etc/openvpn --rm ${SB_IMAGE} ovpn_genconfig -u tcp://${PUBLIC_HOSTNAME}:${API_PORT} 2>&1 >/dev/null)
   local readonly RET=$?
   if [[ $RET -eq 0 ]]; then
     return 0
@@ -220,7 +220,7 @@ function start_openvpn() {
   # By itself, local messes up the return code.
   local readonly STDERR_OUTPUT
 
-  STDERR_OUTPUT=$(docker run --name openvpn -v ${OPEN_VPN_DATA_DIR}:/etc/openvpn -d -p ${API_PORT}:${API_PORT}/udp --cap-add=NET_ADMIN ${SB_IMAGE} 2>&1 >/dev/null)
+  STDERR_OUTPUT=$(docker run --name openvpn -v ${OPEN_VPN_DATA_DIR}:/etc/openvpn -d -p ${API_PORT}:${API_PORT}/tcp --cap-add=NET_ADMIN ${SB_IMAGE} 2>&1 >/dev/null)
   local readonly RET=$?
   if [[ $RET -eq 0 ]]; then
     return 0
