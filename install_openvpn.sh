@@ -201,7 +201,7 @@ function join() {
 }
 
 function init_pki() {
-  # sudo docker run -v ${OPEN_VPN_DATA_DIR}:/etc/openvpn --rm -it ${SB_IMAGE} ovpn_initpki
+  sudo docker run -v ${OPEN_VPN_DATA_DIR}:/etc/openvpn --rm -it ${SB_IMAGE} ovpn_initpki
 }
 
 function generate_openvpn_config_file() {
@@ -291,7 +291,7 @@ install_openvpn() {
   run_step "Generate OpenVPN config file" generate_openvpn_config_file
   
   #init PKI
-  run_step "Init OpenVPN PKI" init_pki
+  #run_step "Init OpenVPN PKI" init_pki
   
   #run_step "Starting OpenVPN" start_openvpn
   run_step "Starting OpenVPN" start_openvpn
