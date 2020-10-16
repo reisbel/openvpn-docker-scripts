@@ -7,13 +7,13 @@
 Install OpenVPN and dependencies
 
 ```bash
-sudo bash -c "$(wget -qO- https://raw.githubusercontent.com/reisbel/openvpn-docker-scripts/master/install_openvpn.sh)"
+sudo bash -c "$(wget -qO- https://raw.githubusercontent.com/reisbel/openvpn-docker-scripts/master-image-v2.3/install_openvpn.sh)"
 ```
 
 ## Create user
 
 ```bash
-sudo bash  -c "$(wget -qO- https://raw.githubusercontent.com/reisbel/openvpn-docker-scripts/master/create_user.sh)" --dump-strings user1
+sudo bash  -c "$(wget -qO- https://raw.githubusercontent.com/reisbel/openvpn-docker-scripts/master-image-v2.3/create_user.sh)" --dump-strings user1
 ```
 
 ## References
