@@ -357,7 +357,7 @@ function is_valid_port() {
 }
 
 function is_valid_bool() {
-  (($1 == "true" || $1 == "false"))
+  (("$1" == "true" || "$1" == "false"))
 }
 
 function parse_flags() {
