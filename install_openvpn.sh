@@ -433,7 +433,7 @@ function main() {
   declare -i FLAGS_API_PORT=1194
   declare -i FLAGS_KEYS_PORT=0
   declare -i FLAGS_MANAGEMENT_PORT=5555
-  declare FLAGS_MONITOR_ENABLE=false
+  declare FLAGS_MONITOR_ENABLE=true
   parse_flags "$@"
   install_openvpn
   if $FLAGS_MONITOR_ENABLE; then
