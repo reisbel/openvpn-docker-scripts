@@ -398,7 +398,7 @@ function parse_flags() {
         fi
         ;;
       --monitor-enable)
-        FLAGS_MONITOR_ENABLE=$1
+        FLAGS_MONITOR_ENABLE=${1}
         shift
         if ! is_valid_bool $FLAGS_MONITOR_ENABLE; then
           log_error "Invalid value for $flag: $FLAGS_MONITOR_ENABLE"
