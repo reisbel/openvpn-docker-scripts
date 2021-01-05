@@ -357,7 +357,7 @@ function is_valid_port() {
 }
 
 function is_valid_bool() {
-  print "$1" "true"
+  printf "$1" "true"
   (("$1" == "true" || "$1" == "false"))
 }
 
