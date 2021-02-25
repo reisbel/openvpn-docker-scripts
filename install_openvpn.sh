@@ -357,7 +357,8 @@ function is_valid_port() {
 }
 
 function is_valid_bool() {
-  (($1 == "true" || $1 == "false"))
+  printf "true"
+  (("${1}" == "true" || "${1}" == "false"))
 }
 
 function parse_flags() {
@@ -398,7 +399,7 @@ function parse_flags() {
         fi
         ;;
       --monitor-enable)
-        FLAGS_MONITOR_ENABLE=$1
+        FLAGS_MONITOR_ENABLE=${1}
         shift
         if ! is_valid_bool $FLAGS_MONITOR_ENABLE; then
           log_error "Invalid value for $flag: $FLAGS_MONITOR_ENABLE"
@@ -432,7 +433,7 @@ function main() {
   declare -i FLAGS_API_PORT=1194
   declare -i FLAGS_KEYS_PORT=0
   declare -i FLAGS_MANAGEMENT_PORT=5555
-  declare FLAGS_MONITOR_ENABLE=false
+  declare FLAGS_MONITOR_ENABLE=true
   parse_flags "$@"
   install_openvpn
   if $FLAGS_MONITOR_ENABLE; then
