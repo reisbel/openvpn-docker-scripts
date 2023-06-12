@@ -310,7 +310,7 @@ install_openvpn() {
     MANAGEMENT_PORT=${SB_MANAGEMENT_PORT:-$(get_random_port)}
   done
   
-  readonly SB_IMAGE=${SB_IMAGE:-kylemanna/openvpn}
+  readonly SB_IMAGE=${SB_IMAGE:-kylemanna/openvpn:2.4}
   
   if [[ -z $PUBLIC_HOSTNAME ]]; then
     local readonly MSG="Failed to determine the server's IP address."
